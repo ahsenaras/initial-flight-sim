@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skywriter // Flight Simulation</title>
+<style>
+:root{--panel:#101820;--card:#18242e;--text:#eef6fa;--muted:#9fb2bf;--line:#2d4351;--accent:#dcebf2}
+*{box-sizing:border-box}
+body{margin:0;background:#0b1117;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.wrap{max-width:900px;margin:auto;padding:18px}
+.top{display:flex;gap:12px;justify-content:space-between;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+h1{font-size:16px;margin:0 0 5px;letter-spacing:.08em}
+.sub{color:var(--muted);font-size:12px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
+input{width:150px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:white;font:inherit;text-transform:uppercase}
+button{padding:11px 14px;border-radius:8px;border:1px solid var(--line);font:inherit;cursor:pointer}
+#start{background:var(--accent);color:#10202a;font-weight:700}
+#reset{background:var(--card);color:var(--text)}
+.scene{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#8fc5dd}
+svg{display:block;width:100%;height:auto}
+.telemetry{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:9px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:10px}
+.k{font-size:10px;color:var(--muted);margin-bottom:3px}.v{font-size:13px}
+.note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5}
+@media(max-width:600px){.telemetry{grid-template-columns:repeat(2,1fr)}.controls{width:100%}.controls>div{flex:1}input{width:100%}}
+</style>
+</head>
+<body>
+<div id="boot" style="position:fixed;inset:0;z-index:20;background:#071017;color:#eaf4f8;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:opacity .7s ease">
+  <div style="width:min(520px,86vw)">
+    <div style="font-size:11px;color:#8299a7;letter-spacing:.15em;margin-bottom:14px">LTFM // B777 FLIGHT COMPUTER</div>
+    <div id="bootline" style="font-size:16px;line-height:1.8;min-height:58px">INIZIALIZZAZIONE SISTEMI...</div>
+    <div style="height:2px;background:#1b303c;margin-top:16px;overflow:hidden"><div id="bootbar" style="height:100%;width:0;background:#dcebf2;transition:width .5s ease"></div></div>
+  </div>
+</div>
+<div class="wrap" id="mainApp">
+  <div class="top">
+    <div><h1>LTFM // B777 SKYWRITER</h1><div style="font-size:10px;color:#78909c;letter-spacing:.12em;margin-bottom:5px">FLIGHT COMPUTER / ROUTE RENDERING SYSTEM</div><div id="status" class="sub">SISTEMA PRONTO — in attesa del piano di volo</div></div>
+    <div class="controls">
+      <div><label for="letters">FLIGHT PLAN</label><input id="letters" maxlength="6" value="BRF" aria-label="Lettere da tracciare"></div>
+      <button id="start">AVVIA VOLO ✈</button><button id="reset">RESET</button>
+    </div>
+  </div>
+
+  <div class="scene">
+    <svg id="svg" viewBox="0 0 900 500" role="img" aria-label="Simulazione di un Boeing 777 che decolla e traccia in cielo le lettere inserite">
+      <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#72b3d3"/><stop offset="1" stop-color="#e1eef3"/></linearGradient></defs>
+      <rect width="900" height="500" fill="url(#sky)"/>
+      <g opacity=".14" stroke="#fff"><path d="M0 80H900M0 160H900M0 240H900M0 320H900"/><path d="M100 0V420M200 0V420M300 0V420M400 0V420M500 0V420M600 0V420M700 0V420M800 0V420"/></g>
+      <circle cx="800" cy="70" r="30" fill="#f6e5a7" opacity=".85"/>
+      <g opacity=".95">
+        <path d="M0 500 L0 425 L900 425 L900 500 Z" fill="#59645a"/>
+        <path d="M0 455 H900" stroke="#69766b" stroke-width="18"/>
+        <path d="M15 462 H315" stroke="#f1ecd5" stroke-width="5" stroke-dasharray="26 16"/>
+        <path d="M580 445 H890" stroke="#e6d66f" stroke-width="2"/>
+        <path d="M580 472 H890" stroke="#e6d66f" stroke-width="2"/>
+        <g fill="#d9e0e2" opacity=".85">
+          <rect x="610" y="395" width="210" height="22" rx="3"/>
+          <rect x="645" y="377" width="16" height="40"/><rect x="690" y="377" width="16" height="40"/>
+          <rect x="735" y="377" width="16" height="40"/><rect x="780" y="377" width="16" height="40"/>
+        </g>
+        <path d="M570 425 C620 405 700 405 850 425" fill="none" stroke="#aeb8b5" stroke-width="6"/>
+        <text x="18" y="416" fill="#425148" font-size="12">AEROPORTO DI ISTANBUL • LTFM</text>
+        <text x="335" y="467" fill="#eef1df" font-size="18" opacity=".75">36</text>
+      </g>
+      <path id="trail" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".94"/>
+      <g id="plane" aria-label="Boeing 777">
+        <g transform="scale(.72)">
+          <path d="M-34,-5 L-12,-7 L5,-42 L14,-42 L8,-8 L42,-5 L52,0 L42,5 L8,8 L14,42 L5,42 L-12,7 L-34,5 L-45,16 L-51,16 L-47,3 L-57,2 L-62,0 L-57,-2 L-47,-3 L-51,-16 L-45,-16 Z" fill="#f7fafb" stroke="#334a58" stroke-width="2"/>
+          <ellipse cx="5" cy="-20" rx="5.5" ry="9" fill="#526977"/><ellipse cx="5" cy="20" rx="5.5" ry="9" fill="#526977"/>
+          <path d="M-52 0 H43" stroke="#b9c8d0" stroke-width="1"/>
+        </g>
+      </g>
+      <g fill="white" font-size="11" opacity=".9"><text id="simlabel" x="18" y="25">SIM // BRF-01</text><text id="coord" x="18" y="43">POS 040,430</text></g>
+    </svg>
+  </div>
+
+  <div class="telemetry">
+    <div class="box"><div class="k">FASE</div><div class="v" id="phase">PRONTO</div></div>
+    <div class="box"><div class="k">IAS</div><div class="v" id="speed">0 KT</div></div>
+    <div class="box"><div class="k">ALT</div><div class="v" id="alt">0 FT</div></div>
+    <div class="box"><div class="k">ROTTA</div><div class="v" id="path">—</div></div>
+  </div>
+  <div class="note">Simulazione di volo Boeing 777 • scenario ispirato a LTFM / Aeroporto di Istanbul • A–Z e 0–9.</div>
+</div>
+
+<script>
+(()=>{
+ const boot=document.getElementById('boot'), line=document.getElementById('bootline'), bar=document.getElementById('bootbar');
+ const steps=[
+  ['INIZIALIZZAZIONE SISTEMI...',18],
+  ['B777 // SISTEMI DI VOLO ONLINE',42],
+  ['LTFM // PIANO DI VOLO RICEVUTO: BRF',68],
+  ['CONTROLLO ROTTA...',86],
+  ['AUTORIZZATO AL DECOLLO.',100]
+ ];
+ let i=0;
+ function next(){
+   if(i>=steps.length){setTimeout(()=>{boot.style.opacity='0';setTimeout(()=>boot.remove(),720)},550);return}
+   line.textContent=steps[i][0];bar.style.width=steps[i][1]+'%';i++;setTimeout(next,620);
+ }
+ setTimeout(next,250);
+})();
+</script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id), plane=$('plane'),trail=$('trail'),status=$('status'),phase=$('phase'),speed=$('speed'),alt=$('alt'),path=$('path'),coord=$('coord'),input=$('letters'),start=$('start'),reset=$('reset'),simlabel=$('simlabel');
+let raf=null;
+
+/* Simple vector-stroke font: coordinates live in a 0..1 box.
+   null means lift the pen, so letters can have separate strokes. */
+const F={
+A:[[0,.95],[.5,.05],[1,.95],null,[.2,.62],[.8,.62]],
+B:[[0,.95],[0,.05],[.55,.05],[.88,.18],[.88,.38],[.55,.5],[0,.5],null,[.55,.5],[.9,.62],[.9,.82],[.55,.95],[0,.95]],
+C:[[.9,.15],[.7,.05],[.2,.05],[0,.25],[0,.75],[.2,.95],[.7,.95],[.9,.85]],
+D:[[0,.95],[0,.05],[.5,.05],[.9,.25],[.9,.75],[.5,.95],[0,.95]],
+E:[[.9,.05],[0,.05],[0,.95],[.9,.95],null,[0,.5],[.7,.5]],
+F:[[0,.95],[0,.05],[.9,.05],null,[0,.5],[.7,.5]],
+G:[[.9,.2],[.7,.05],[.2,.05],[0,.25],[0,.75],[.2,.95],[.75,.95],[.9,.75],[.9,.58],[.55,.58]],
+H:[[0,.05],[0,.95],null,[1,.05],[1,.95],null,[0,.5],[1,.5]],
+I:[[.1,.05],[.9,.05],null,[.5,.05],[.5,.95],null,[.1,.95],[.9,.95]],
+J:[[.1,.05],[.9,.05],[.9,.75],[.72,.95],[.3,.95],[.08,.78]],
+K:[[0,.05],[0,.95],null,[.95,.05],[0,.55],[.95,.95]],
+L:[[0,.05],[0,.95],[.9,.95]],
+M:[[0,.95],[0,.05],[.5,.55],[1,.05],[1,.95]],
+N:[[0,.95],[0,.05],[1,.95],[1,.05]],
+O:[[.25,.05],[.75,.05],[1,.28],[1,.72],[.75,.95],[.25,.95],[0,.72],[0,.28],[.25,.05]],
+P:[[0,.95],[0,.05],[.6,.05],[.9,.2],[.9,.4],[.6,.52],[0,.52]],
+Q:[[.25,.05],[.75,.05],[1,.28],[1,.72],[.75,.95],[.25,.95],[0,.72],[0,.28],[.25,.05],null,[.58,.68],[1,1]],
+R:[[0,.95],[0,.05],[.6,.05],[.9,.2],[.9,.4],[.6,.52],[0,.52],null,[.52,.52],[1,.95]],
+S:[[.9,.15],[.7,.05],[.2,.05],[0,.22],[.15,.45],[.75,.55],[.95,.75],[.8,.95],[.2,.95],[0,.83]],
+T:[[0,.05],[1,.05],null,[.5,.05],[.5,.95]],
+U:[[0,.05],[0,.75],[.2,.95],[.8,.95],[1,.75],[1,.05]],
+V:[[0,.05],[.5,.95],[1,.05]],W:[[0,.05],[.2,.95],[.5,.55],[.8,.95],[1,.05]],
+X:[[0,.05],[1,.95],null,[1,.05],[0,.95]],Y:[[0,.05],[.5,.5],[1,.05],null,[.5,.5],[.5,.95]],Z:[[0,.05],[1,.05],[0,.95],[1,.95]],
+0:[[.25,.05],[.75,.05],[1,.28],[1,.72],[.75,.95],[.25,.95],[0,.72],[0,.28],[.25,.05]],
+1:[[.3,.25],[.5,.05],[.5,.95],null,[.25,.95],[.75,.95]],2:[[.05,.25],[.2,.05],[.75,.05],[.95,.25],[.05,.95],[.95,.95]],
+3:[[.05,.1],[.75,.05],[.95,.25],[.7,.5],[.95,.72],[.75,.95],[.05,.9]],4:[[.8,.95],[.8,.05],[.05,.65],[1,.65]],
+5:[[.95,.05],[.1,.05],[.05,.48],[.75,.48],[.95,.65],[.85,.9],[.15,.95],[.02,.85]],6:[[.9,.15],[.7,.05],[.2,.15],[.05,.5],[.12,.85],[.35,.95],[.75,.9],[.92,.7],[.75,.52],[.1,.52]],
+7:[[.05,.05],[.95,.05],[.35,.95]],8:[[.25,.05],[.75,.05],[.95,.25],[.75,.48],[.25,.48],[.05,.25],[.25,.05],null,[.25,.48],[.75,.48],[.95,.72],[.75,.95],[.25,.95],[.05,.72],[.25,.48]],
+9:[[.9,.5],[.15,.5],[.05,.3],[.2,.08],[.65,.05],[.9,.25],[.85,.7],[.65,.95],[.2,.9]]
+};
+
+function build(word){
+ /* One continuous flight path. Each character is rendered as a single-stroke
+    approximation; transitions are smooth curved repositioning legs. */
+ const chars=[...word], pts=[[40,430],[90,430],[140,425],[185,405],[215,370],[235,330]];
+ const available=610,gap=22,w=Math.min(92,(available-gap*(chars.length-1))/Math.max(chars.length,1)),h=178,baseX=260,top=105;
+ const single={
+ B:[[0,.95],[0,.05],[.55,.05],[.88,.18],[.88,.36],[.58,.48],[0,.48],[.58,.48],[.9,.62],[.9,.82],[.58,.95],[0,.95]],
+ R:[[0,.95],[0,.05],[.58,.05],[.9,.2],[.9,.38],[.58,.5],[0,.5],[.58,.5],[1,.95]],
+ F:[[0,.95],[0,.05],[.95,.05],[0,.05],[0,.5],[.75,.5]],
+ A:[[0,.95],[.5,.05],[1,.95],[.78,.55],[.22,.55],[1,.95]],
+ C:[[.95,.16],[.75,.05],[.2,.05],[0,.27],[0,.73],[.2,.95],[.78,.95],[.95,.84]],
+ E:[[.95,.05],[0,.05],[0,.5],[.72,.5],[0,.5],[0,.95],[.95,.95]],
+ H:[[0,.95],[0,.05],[0,.5],[1,.5],[1,.05],[1,.95]],
+ I:[[.1,.05],[.9,.05],[.5,.05],[.5,.95],[.1,.95],[.9,.95]],
+ L:[[0,.05],[0,.95],[.95,.95]],N:[[0,.95],[0,.05],[1,.95],[1,.05]],
+ M:[[0,.95],[0,.05],[.5,.55],[1,.05],[1,.95]],V:[[0,.05],[.5,.95],[1,.05]],
+ W:[[0,.05],[.2,.95],[.5,.55],[.8,.95],[1,.05]],X:[[0,.05],[1,.95],[.5,.5],[1,.05],[0,.95]],
+ Y:[[0,.05],[.5,.5],[1,.05],[.5,.5],[.5,.95]],Z:[[0,.05],[1,.05],[0,.95],[1,.95]],
+ T:[[0,.05],[1,.05],[.5,.05],[.5,.95]],U:[[0,.05],[0,.75],[.2,.95],[.8,.95],[1,.75],[1,.05]],
+ J:[[.05,.05],[.9,.05],[.9,.75],[.7,.95],[.25,.95],[.05,.78]],
+ K:[[0,.05],[0,.95],[0,.55],[.95,.05],[0,.55],[.95,.95]],
+ P:[[0,.95],[0,.05],[.6,.05],[.9,.2],[.9,.4],[.6,.52],[0,.52]],
+ S:[[.9,.15],[.7,.05],[.2,.05],[0,.22],[.15,.45],[.75,.55],[.95,.75],[.8,.95],[.2,.95],[0,.83]],
+ D:[[0,.95],[0,.05],[.52,.05],[.92,.28],[.92,.72],[.52,.95],[0,.95]],
+ O:[[.25,.05],[.75,.05],[1,.28],[1,.72],[.75,.95],[.25,.95],[0,.72],[0,.28],[.25,.05]],
+ G:[[.92,.18],[.72,.05],[.2,.05],[0,.27],[0,.73],[.2,.95],[.78,.95],[.95,.75],[.95,.58],[.55,.58]],
+ Q:[[.25,.05],[.75,.05],[1,.28],[1,.72],[.75,.95],[.25,.95],[0,.72],[0,.28],[.25,.05],[.58,.68],[1,1]]
+ };
+ function glyph(ch){return single[ch]||F[ch]?.filter(Boolean)||single.X}
+ function addCurve(a,b){
+   const mx=(a[0]+b[0])/2, lift=Math.min(a[1],b[1])-22;
+   for(let k=1;k<=8;k++){let t=k/8,mt=1-t;pts.push([mt*mt*a[0]+2*mt*t*mx+t*t*b[0],mt*mt*a[1]+2*mt*t*lift+t*t*b[1]])}
+ }
+ chars.forEach((ch,i)=>{
+   const g=glyph(ch),ox=baseX+i*(w+gap), mapped=g.map(p=>[ox+p[0]*w,top+p[1]*h]);
+   if(mapped.length){addCurve(pts[pts.length-1],mapped[0]); mapped.forEach(p=>pts.push(p))}
+ });
+ return pts;
+}
+function segments(points){
+ let s=[], total=0, last=null;
+ points.forEach((p,i)=>{if(!p){last=null;return} if(last){let d=Math.hypot(p[0]-last.p[0],p[1]-last.p[1]);s.push({a:last.p,b:p,d,from:last.i,to:i});total+=d} last={p,i}});
+ return {s,total};
+}
+function resetSim(){
+ if(raf)cancelAnimationFrame(raf);raf=null;plane.setAttribute('transform','translate(40 430)');trail.setAttribute('d','');phase.textContent='PRONTO';speed.textContent='0 KT';alt.textContent='0 FT';path.textContent='—';status.textContent='SISTEMA PRONTO — in attesa del piano di volo';coord.textContent='POS 040,430';start.disabled=false;
+}
+function run(){
+ resetSim();
+ let word=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6)||'BRF'; input.value=word; simlabel.textContent='B777 // '+word+'-01';
+ const points=build(word), data=segments(points); if(!data.s.length)return; start.disabled=true;
+ const duration=3500+word.length*1800,t0=performance.now();
+ function frame(now){
+   const p=Math.min(1,(now-t0)/duration), target=p*data.total; let acc=0,seg=data.s[0];
+   for(const x of data.s){seg=x;if(acc+x.d>=target)break;acc+=x.d}
+   const q=Math.max(0,Math.min(1,(target-acc)/seg.d)),x=seg.a[0]+(seg.b[0]-seg.a[0])*q,y=seg.a[1]+(seg.b[1]-seg.a[1])*q,ang=Math.atan2(seg.b[1]-seg.a[1],seg.b[0]-seg.a[0])*180/Math.PI;
+   plane.setAttribute('transform',`translate(${x} ${y}) rotate(${ang})`);
+   let d='',last=null,travel=0;
+   for(const s of data.s){
+     if(travel+s.d<target){if(!last||last[0]!==s.a[0]||last[1]!==s.a[1])d+=` M ${s.a[0]} ${s.a[1]}`;d+=` L ${s.b[0]} ${s.b[1]}`;last=s.b;travel+=s.d}
+     else{let qq=Math.max(0,Math.min(1,(target-travel)/s.d));if(!last||last[0]!==s.a[0]||last[1]!==s.a[1])d+=` M ${s.a[0]} ${s.a[1]}`;d+=` L ${s.a[0]+(s.b[0]-s.a[0])*qq} ${s.a[1]+(s.b[1]-s.a[1])*qq}`;break}
+   }
+   trail.setAttribute('d',d);coord.textContent=`POS ${Math.round(x)},${Math.round(y)}`;
+   if(p<.18){phase.textContent='DECOLLO';status.textContent='DECOLLO — positive climb';speed.textContent=Math.round(70+p*390)+' KT';alt.textContent=Math.round(p*17000)+' FT';path.textContent='—'}
+   else{phase.textContent='TRACCIAMENTO';status.textContent='ESECUZIONE PIANO DI VOLO // '+word;speed.textContent='165 KT';alt.textContent='4500 FT';path.textContent=word}
+   if(p<1)raf=requestAnimationFrame(frame);else{phase.textContent='COMPLETATO';status.textContent='FLIGHT ROTTA COMPLETATO // '+word;start.disabled=false;raf=null}
+ }
+ raf=requestAnimationFrame(frame);
+}
+start.addEventListener('click',run);reset.addEventListener('click',resetSim);
+input.addEventListener('input',()=>{input.value=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6)});
+resetSim();
+})();
+</script>
+</body>
+</html>
